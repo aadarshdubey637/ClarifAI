@@ -2,7 +2,17 @@ import React, { useRef } from 'react';
 import { Layers, Play, Upload, MessageCircle, FileText, Zap, ChevronRight, Star, Clock, Globe, User, Twitter, Github, Linkedin, HelpCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const getApiUrl = () => {
+  const envUrl = import.meta.env.VITE_API_URL;
+  if (envUrl) return envUrl.replace(/\/$/, '');
+  
+  if (window.location.hostname.includes('onrender.com')) {
+    return 'https://clarifai-backend-q4j0.onrender.com';
+  }
+  return 'http://localhost:8000';
+};
+
+const API_URL = getApiUrl();
 
 const HomePage = ({ onNavigate, onVideoSelect, isAuthenticated, onLogout }) => {
   const fileInputRef = useRef(null);

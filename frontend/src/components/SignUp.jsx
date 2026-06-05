@@ -3,7 +3,17 @@ import { Layers } from 'lucide-react';
 import { Input } from './Input';
 import { Button } from './Button';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const getApiUrl = () => {
+  const envUrl = import.meta.env.VITE_API_URL;
+  if (envUrl) return envUrl.replace(/\/$/, '');
+  
+  if (window.location.hostname.includes('onrender.com')) {
+    return 'https://clarifai-backend-q4j0.onrender.com';
+  }
+  return 'http://localhost:8000';
+};
+
+const API_URL = getApiUrl();
 
 export const SignUp = ({ onSwitchToLogin }) => {
   const [isLoading, setIsLoading] = useState(false);

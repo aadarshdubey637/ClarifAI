@@ -19,7 +19,18 @@ import {
   Activity
 } from 'lucide-react';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const getApiUrl = () => {
+  const envUrl = import.meta.env.VITE_API_URL;
+  if (envUrl) return envUrl.replace(/\/$/, '');
+  
+  // Auto-detect if on Render
+  if (window.location.hostname.includes('onrender.com')) {
+    return 'https://clarifai-backend-q4j0.onrender.com';
+  }
+  return 'http://localhost:8000';
+};
+
+const API_URL = getApiUrl();
 
 const AnalysisPage = ({ onBack, videoData }) => {
   const [message, setMessage] = useState('');
