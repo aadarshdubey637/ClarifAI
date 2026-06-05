@@ -18,12 +18,8 @@ services:
   # Frontend Service (Static Site)
   - type: static
     name: clarifai-frontend
-    rootDir: .
+    rootDir: frontend
     buildCommand: npm install && npm run build
-    publishPath: frontend/dist
+    publishPath: dist
     envVars:
       - key: VITE_API_URL
-        fromService:
-          name: clarifai-backend
-          type: web
-          property: host
