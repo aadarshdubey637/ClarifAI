@@ -21,9 +21,9 @@ services:
   # Frontend Service (Static Site)
   - type: web
     name: clarifai-frontend
-    env: static
+    runtime: static
     buildCommand: npm install && npm run build
-    publishPath: frontend/dist
+    staticPublishPath: frontend/dist
     rootDir: .
     envVars:
       - key: VITE_API_URL
