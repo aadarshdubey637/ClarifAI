@@ -1,0 +1,33 @@
+services:
+  # Backend Service
+  - type: web
+    name: clarifai-backend
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    rootDir: backend
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: SECRET_KEY
+        sync: false
+      - key: ALGORITHM
+        value: HS256
+
+  # Frontend Service (Static Site)
+  - type: web
+    name: clarifai-frontend
+    env: static
+    buildCommand: npm install && npm run build
+    publishPath: frontend/dist
+    rootDir: .
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          name: clarifai-backend
+          type: web
+          property: host
