@@ -153,11 +153,6 @@ def process_video_background(video_id: int):
     finally:
         db.close()
 
-    except Exception as e:
-        print(f"Unexpected Backend Error: {e}")
-    finally:
-        db.close()
-
 @router.post("/upload")
 async def upload_video(
     background_tasks: BackgroundTasks,
