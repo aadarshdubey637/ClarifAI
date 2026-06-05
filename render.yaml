@@ -9,9 +9,13 @@ services:
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: DATABASE_URL
+        sync: false
       - key: GROQ_API_KEY
+        sync: false
       - key: GEMINI_API_KEY
+        sync: false
       - key: SECRET_KEY
+        sync: false
       - key: ALGORITHM
         value: HS256
 
@@ -24,3 +28,4 @@ services:
     staticPublishPath: dist
     envVars:
       - key: VITE_API_URL
+        sync: false
