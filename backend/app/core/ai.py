@@ -248,4 +248,27 @@ def clean_and_correct_transcript(transcript_text: str):
     # Simple fallback: return original text if AI correction fails
     return transcript_text
 
+def transcribe_audio_with_groq(audio_file_path: str):
+    """
+    Uses Groq's Cloud Whisper API to transcribe audio files.
+    This is much faster and more memory-efficient than running Whisper locally.
+    """
+    if not GROQ_API_KEY or GROQ_API_KEY == "PASTE_YOUR_GROQ_KEY_HERE":
+        return None
+
+    try:
+        client = Groq(api_key=GROQ_API_KEY)
+        with open(audio_file_path, "rb") as file:
+            transcription = client.audio.transcriptions.create(
+                file=(os.path.basename(audio_file_path), file.read()),
+                model="whisper-large-v3",
+                prompt="Aapka swagat hai. Aaj hum AI aur coding ke baare mein baat karenge in Hinglish.",
+                response_format="text",
+                language="hi" # Use 'hi' for Hindi/Hinglish transcription
+            )
+            return transcription
+    except Exception as e:
+        print(f"Groq Transcription Error: {e}")
+        return None
+
   
