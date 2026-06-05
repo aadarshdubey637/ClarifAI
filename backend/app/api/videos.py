@@ -8,11 +8,9 @@ import shutil
 import uuid
 import subprocess
 from datetime import datetime
-from faster_whisper import WhisperModel, BatchedInferencePipeline
-from app.core.ai import generate_smart_summary, ask_ai_about_video, clean_and_correct_transcript
+from app.core.ai import generate_smart_summary, ask_ai_about_video, clean_and_correct_transcript, transcribe_audio_with_groq
 import json
 from pydantic import BaseModel
-# Removed MoviePy import as it's causing frame reading issues on Windows
 
 router = APIRouter()
 
@@ -26,49 +24,8 @@ for d in [UPLOAD_DIR, AUDIO_DIR]:
     if not os.path.exists(d):
         os.makedirs(d)
 
-# Initialize model once at the global level to save time
-print("Checking for GPU acceleration...")
-device = "cpu"
-compute_type = "int8"
-model_instance = None
-batched_model_instance = None
-
-try:
-    import torch
-    if torch.cuda.is_available():
-        device = "cuda"
-        compute_type = "float16"
-    print(f"Using device: {device} ({compute_type})")
-    
-    # Back to 'tiny' for maximum speed as requested.
-    # We will use task="transcribe" to prevent auto-translation to English.
-    model_instance = WhisperModel("tiny", device=device, compute_type=compute_type)
-    
-    # Initialize BatchedInferencePipeline for high-throughput GPU processing
-    if device == "cuda":
-        try:
-            batched_model_instance = BatchedInferencePipeline(model_instance)
-            print("Batched Inference Pipeline initialized!")
-        except Exception as e:
-            print(f"Could not initialize BatchedInferencePipeline: {e}")
-            batched_model_instance = None
-        
-    print("AI Model (Tiny) loaded successfully!")
-except Exception as e:
-    print(f"Error loading AI model: {e}")
-    # Fallback to CPU if something goes wrong
-    try:
-        print("Falling back to CPU...")
-        device = "cpu"
-        compute_type = "int8"
-        model_instance = WhisperModel("tiny", device="cpu", compute_type="int8")
-        batched_model_instance = None
-    except:
-        model_instance = None
-        batched_model_instance = None
-
 def process_video_background(video_id: int):
-    """Background task to extract audio and generate transcript"""
+    """Background task to extract audio and generate transcript using Groq"""
     db = SessionLocal()
     print(f"--- Starting Background Processing for Video ID: {video_id} ---")
     try:
@@ -104,9 +61,7 @@ def process_video_background(video_id: int):
                 audio_path
             ]
             
-            print(f"Running command: {' '.join(command)}")
             process = subprocess.run(command, capture_output=True, text=True)
-            
             if process.returncode != 0:
                 raise Exception(f"FFmpeg error: {process.stderr}")
                 
@@ -115,7 +70,6 @@ def process_video_background(video_id: int):
             db.commit()
         except Exception as e:
             video.status = "failed"
-            video.progress_percentage = 0
             db.commit()
             print(f"Critical Error during Audio extraction: {str(e)}")
             return
@@ -126,105 +80,59 @@ def process_video_background(video_id: int):
         video.progress_percentage = 50
         db.commit()
 
-        # 4. Generate Transcript with Faster Whisper
-        print("Step 4: Generating transcript using AI...")
+        # 4. Generate Transcript with Groq Whisper (Cloud)
+        print("Step 4: Generating transcript using Groq Cloud AI...")
         try:
-            if model_instance is None:
-                raise Exception("AI Model is not loaded")
-                
-            # Use Batched Inference if available (High-Throughput Mode)
-            # This processes multiple chunks in parallel on the GPU
-            if batched_model_instance and device == "cuda":
-                print("Running Batched Inference (GPU Optimized)...")
-                segments, info = batched_model_instance.transcribe(
-                    audio_path, 
-                    batch_size=16, # Processes 16 chunks simultaneously
-                    beam_size=1, 
-                    task="transcribe", 
-                    initial_prompt="Aapka swagat hai. Aaj hum AI aur coding ke baare mein baat karenge in Hinglish.",
-                    vad_filter=True,
-                    word_timestamps=True
-                )
-            else:
-                # Standard speed mode: beam_size=1 and tiny model
-                # task="transcribe" ensures it stays in original language (Hinglish)
-                print("Running Standard Inference...")
-                segments, info = model_instance.transcribe(
-                    audio_path, 
-                    beam_size=1, 
-                    task="transcribe", 
-                    initial_prompt="Aapka swagat hai. Aaj hum AI aur coding ke baare mein baat karenge in Hinglish.",
-                    vad_filter=True,
-                    vad_parameters=dict(min_silence_duration_ms=500),
-                    word_timestamps=True
-                )
+            full_text = transcribe_audio_with_groq(audio_path)
             
-            # Use a faster way to realize segments
-            segments_list = []
-            for segment in segments:
-                segments_list.append(segment)
-                # Update current chunk for real-time display with timestamp
-                video.current_chunk = f"{segment.start}|{segment.text}"
+            if not full_text:
+                raise Exception("Transcription failed or returned empty text")
                 
-                # Dynamic progress during transcription
-                if len(segments_list) % 5 == 0:
-                    video.progress_percentage = min(85, 70 + (len(segments_list) // 3))
-                
-                db.commit()
-
-            full_text = " ".join([s.text for s in segments_list]).strip()
             print(f"Transcription complete! Total characters: {len(full_text)}")
             
-            video.current_chunk = None # Clear after completion
-            video.progress_percentage = 90
+            video.progress_percentage = 80
             db.commit()
 
-            # 5. Save Initial Transcript Metadata
+            # 5. Save Transcript
             print("Step 5: Saving transcript to database...")
-            
-            # Step 5.5: AI Correction (Fixing Whisper Tiny mishearings)
-            print("Step 5.5: Refining transcript with AI for accuracy...")
-            refined_text = clean_and_correct_transcript(full_text)
             
             new_transcript = Transcript(
                 video_id=video.id,
-                full_text=refined_text # Store the high-quality refined version
+                full_text=full_text
             )
             db.add(new_transcript)
             db.flush()
 
-            # 6. Save Transcript Chunks
-            print(f"Step 6: Saving {len(segments_list)} transcript chunks...")
-            for segment in segments_list:
-                # Convert numpy types to native python types to avoid DB errors
+            # 6. Save Transcript Chunks (Simple sentence splitting for now)
+            # In a production app, we would use Groq's timestamped output
+            sentences = full_text.split('. ')
+            for i, sent in enumerate(sentences):
                 chunk = TranscriptChunk(
                     transcript_id=new_transcript.id,
-                    text=segment.text,
-                    start_time=float(segment.start),
-                    end_time=float(segment.end)
+                    text=sent.strip(),
+                    start_time=i * 5.0, # Estimated timestamps
+                    end_time=(i + 1) * 5.0
                 )
                 db.add(chunk)
 
-            # 7. Transcript Data Saved
             video.transcript = full_text
             video.progress_percentage = 90
             db.commit()
 
             # 8. Generate Smart Summary with AI
             print("Step 8: Generating smart summary using AI...")
-            video.status = "summarizing" # New status for AI analysis
+            video.status = "summarizing"
             db.commit()
             
             try:
                 summary_points = generate_smart_summary(full_text)
-                # Store as JSON string for easy retrieval
                 video.summary = json.dumps(summary_points)
                 print("Smart summary generated successfully!")
             except Exception as ai_e:
                 print(f"Error during AI summary generation: {ai_e}")
                 video.summary = json.dumps(["Summary could not be generated at this time."])
 
-            # 9. Final Update - Everything is complete
+            # 9. Final Update
             video.status = "transcript_completed"
             video.progress_percentage = 100
             db.commit()
@@ -239,6 +147,11 @@ def process_video_background(video_id: int):
             if os.path.exists(audio_path):
                 os.remove(audio_path)
                 print(f"Cleaned up temporary audio file: {audio_path}")
+
+    except Exception as e:
+        print(f"Unexpected Backend Error: {e}")
+    finally:
+        db.close()
 
     except Exception as e:
         print(f"Unexpected Backend Error: {e}")
