@@ -1,18 +1,33 @@
 import os
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from app.api import auth, videos
 from app.db.session import engine, Base
 from app.models import user, video, transcript
+import time
+import logging
+
+# Setup logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Initialize FastAPI
 app = FastAPI(title="ClarifAI Backend", version="1.0.0")
 
+# Middleware to log requests
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    start_time = time.time()
+    response = await call_next(request)
+    process_time = (time.time() - start_time) * 1000
+    logger.info(f"Method: {request.method} Path: {request.url.path} Status: {response.status_code} Time: {process_time:.2f}ms")
+    return response
+
 # 1. VERY SIMPLE ROUTES FIRST
 @app.get("/")
 async def root():
-    return {"message": "ClarifAI API is Running"}
+    return {"message": "ClarifAI API is Running", "status": "online"}
 
 @app.get("/health")
 async def health():

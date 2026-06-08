@@ -20,20 +20,31 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     # Ensure password is within bcrypt limit (72 bytes)
     # If longer, we hash it first to get a consistent shorter string
-    if len(plain_password.encode('utf-8')) > 72:
-        plain_password = hashlib.sha256(plain_password.encode('utf-8')).hexdigest()
+    password_bytes = plain_password.encode('utf-8')
+    if len(password_bytes) > 72:
+        plain_password = hashlib.sha256(password_bytes).hexdigest()
     
     try:
         return pwd_context.verify(plain_password, hashed_password)
+    except ValueError as ve:
+        print(f"Bcrypt length error: {ve}")
+        # If it still fails due to length, try hashing anyway just in case
+        if "72 bytes" in str(ve):
+            try:
+                hashed_plain = hashlib.sha256(plain_password.encode('utf-8')).hexdigest()
+                return pwd_context.verify(hashed_plain, hashed_password)
+            except:
+                return False
+        return False
     except Exception as e:
         print(f"Bcrypt verification error: {e}")
-        # Fallback for older hashes or other issues
         return False
 
 def get_password_hash(password: str) -> str:
     # Ensure password is within bcrypt limit (72 bytes)
-    if len(password.encode('utf-8')) > 72:
-        password = hashlib.sha256(password.encode('utf-8')).hexdigest()
+    password_bytes = password.encode('utf-8')
+    if len(password_bytes) > 72:
+        password = hashlib.sha256(password_bytes).hexdigest()
     return pwd_context.hash(password)
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):

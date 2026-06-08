@@ -7,13 +7,18 @@ import HomePage from './pages/HomePage';
 import AnalysisPage from './pages/AnalysisPage';
 
 const getApiUrl = () => {
-  // If we have an environment variable, use it (and remove any trailing slash)
+  // If we have an environment variable, use it
   const envUrl = import.meta.env.VITE_API_URL;
   if (envUrl) return envUrl.replace(/\/$/, '');
   
-  // Auto-detect if we're on Render
-  if (window.location.hostname.includes('onrender.com')) {
-    return 'https://clarifai-backend-q4j0.onrender.com';
+  // Auto-detect based on current hostname
+  const hostname = window.location.hostname;
+  
+  if (hostname.includes('onrender.com')) {
+    // If we are on clarifai-frontend.onrender.com, 
+    // the backend is likely at clarifai-backend.onrender.com
+    const baseName = hostname.split('.')[0].replace('-frontend', '');
+    return `https://${baseName}-backend.onrender.com`;
   }
   
   // Default to local development
