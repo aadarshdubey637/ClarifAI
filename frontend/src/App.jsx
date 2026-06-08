@@ -7,12 +7,16 @@ import HomePage from './pages/HomePage';
 import AnalysisPage from './pages/AnalysisPage';
 
 const getApiUrl = () => {
+  // If we have an environment variable, use it (and remove any trailing slash)
   const envUrl = import.meta.env.VITE_API_URL;
   if (envUrl) return envUrl.replace(/\/$/, '');
   
+  // Auto-detect if we're on Render
   if (window.location.hostname.includes('onrender.com')) {
     return 'https://clarifai-backend-q4j0.onrender.com';
   }
+  
+  // Default to local development
   return 'http://localhost:8000';
 };
 

@@ -5,7 +5,8 @@ import { motion } from 'framer-motion';
 const getApiUrl = () => {
   const envUrl = import.meta.env.VITE_API_URL;
   if (envUrl) return envUrl.replace(/\/$/, '');
-  
+
+  // Check if we are running on Render
   if (window.location.hostname.includes('onrender.com')) {
     return 'https://clarifai-backend-q4j0.onrender.com';
   }
