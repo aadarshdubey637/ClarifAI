@@ -18,13 +18,20 @@ ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 30))
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    # Truncate password to 72 bytes to avoid bcrypt limit
+    # Ensure password is within bcrypt limit (72 bytes)
+    # If longer, we hash it first to get a consistent shorter string
     if len(plain_password.encode('utf-8')) > 72:
         plain_password = hashlib.sha256(plain_password.encode('utf-8')).hexdigest()
-    return pwd_context.verify(plain_password, hashed_password)
+    
+    try:
+        return pwd_context.verify(plain_password, hashed_password)
+    except Exception as e:
+        print(f"Bcrypt verification error: {e}")
+        # Fallback for older hashes or other issues
+        return False
 
 def get_password_hash(password: str) -> str:
-    # Truncate password to 72 bytes to avoid bcrypt limit
+    # Ensure password is within bcrypt limit (72 bytes)
     if len(password.encode('utf-8')) > 72:
         password = hashlib.sha256(password.encode('utf-8')).hexdigest()
     return pwd_context.hash(password)
