@@ -51,7 +51,8 @@ function App() {
         alert('Login Failed: ' + (data.detail || 'Invalid credentials'));
       }
     } catch (error) {
-      alert('Error: Could not connect to backend. Please check your connection.');
+      console.error("Connection Error:", error);
+      alert(`Debug Info:\nConnecting to: ${API_URL}\nError: ${error.message}\n\nPlease make sure this URL is correct and the backend is live.`);
     } finally {
       setIsLoading(false);
     }
