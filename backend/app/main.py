@@ -15,10 +15,13 @@ except Exception as e:
 
 app = FastAPI(title="ClarifAI Backend", version="1.0.0")
 
-# Mount static files to serve uploaded videos
-if not os.path.exists("uploads"):
-    os.makedirs("uploads")
-app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+@app.get("/api/health")
+async def health_check():
+    return {"status": "ok", "message": "Backend is live and reachable!"}
+
+@app.get("/")
+def read_root():
+    return {"message": "Welcome to ClarifAI API"}
 
 # Configure CORS
 origins = [
@@ -29,23 +32,20 @@ origins = [
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=["*"], # Make it fully open for now to debug
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-@app.get("/api/health")
-async def health_check():
-    return {"status": "ok", "message": "Backend is live and reachable!"}
+# Mount static files to serve uploaded videos
+if not os.path.exists("uploads"):
+    os.makedirs("uploads")
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 # Include Routers
 app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])
 app.include_router(videos.router, prefix="/api/videos", tags=["Videos"])
-
-@app.get("/")
-def read_root():
-    return {"message": "Welcome to ClarifAI API"}
 
 if __name__ == "__main__":
     import uvicorn
