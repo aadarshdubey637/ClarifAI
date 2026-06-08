@@ -18,30 +18,23 @@ ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 30))
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    # Ensure password is within bcrypt limit (72 bytes)
-    # If longer, we hash it first to get a consistent shorter string
-    password_bytes = plain_password.encode('utf-8')
-    if len(password_bytes) > 72:
-        plain_password = hashlib.sha256(password_bytes).hexdigest()
-    
+    # Bcrypt ki 72-byte limit ko handle karne ke liye
+    # Hum password ko hamesha truncate ya hash karenge agar wo lamba hai
     try:
+        password_bytes = plain_password.encode('utf-8')
+        if len(password_bytes) > 72:
+            # Agar password 72 chars se bada hai, to uska SHA256 hash use karein (64 chars)
+            plain_password = hashlib.sha256(password_bytes).hexdigest()
+        
         return pwd_context.verify(plain_password, hashed_password)
-    except ValueError as ve:
-        print(f"Bcrypt length error: {ve}")
-        # If it still fails due to length, try hashing anyway just in case
-        if "72 bytes" in str(ve):
-            try:
-                hashed_plain = hashlib.sha256(plain_password.encode('utf-8')).hexdigest()
-                return pwd_context.verify(hashed_plain, hashed_password)
-            except:
-                return False
-        return False
     except Exception as e:
-        print(f"Bcrypt verification error: {e}")
+        print(f"Auth Error: {e}")
+        # Ek aur koshish: Agar pehle bina hash ke save hua tha aur ab humne hash kar diya
+        # To ho sakta hai verification fail ho raha ho. 
+        # Lekin current logs ke hisaab se bcrypt version ka issue zyada lag raha hai.
         return False
 
 def get_password_hash(password: str) -> str:
-    # Ensure password is within bcrypt limit (72 bytes)
     password_bytes = password.encode('utf-8')
     if len(password_bytes) > 72:
         password = hashlib.sha256(password_bytes).hexdigest()

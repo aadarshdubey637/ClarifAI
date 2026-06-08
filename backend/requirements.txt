@@ -4,8 +4,7 @@ sqlalchemy
 psycopg2-binary
 pydantic[email]
 python-dotenv
-passlib
-bcrypt
+passlib[bcrypt]
 python-multipart
 python-jose[cryptography]
 ffmpeg-python
