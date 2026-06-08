@@ -21,14 +21,23 @@ if not os.path.exists("uploads"):
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 # Configure CORS
+origins = [
+    "https://clarifai-frontend-4l3q.onrender.com",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, specify your React app URL
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
-    expose_headers=["*"],
 )
+
+@app.get("/api/health")
+async def health_check():
+    return {"status": "ok", "message": "Backend is live and reachable!"}
 
 # Include Routers
 app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])
