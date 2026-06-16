@@ -9,7 +9,7 @@ import AnalysisPage from './pages/AnalysisPage';
 const getApiUrl = () => {
   // For Render deployment - Hardcoded for reliability
   // TODO: If your backend URL is different, change it here!
-  return 'https://clarifai-backend.onrender.com';
+  return 'https://clarifai-backend-q4j0.onrender.com';
   
   // Uncomment below if you want to use the old logic
   /*
