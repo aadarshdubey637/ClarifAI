@@ -2,6 +2,17 @@ import os
 from datetime import datetime, timedelta
 from typing import Optional
 from jose import JWTError, jwt
+
+# Monkey-patch bcrypt for passlib compatibility before importing passlib
+try:
+    import bcrypt
+    if not hasattr(bcrypt, "__about__"):
+        class DummyAbout:
+            __version__ = bcrypt.__version__
+        bcrypt.__about__ = DummyAbout()
+except ImportError:
+    pass
+
 from passlib.context import CryptContext
 import hashlib
 from dotenv import load_dotenv
