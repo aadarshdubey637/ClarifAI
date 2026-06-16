@@ -6,10 +6,12 @@ import { Button } from './Button';
 const getApiUrl = () => {
   const envUrl = import.meta.env.VITE_API_URL;
   if (envUrl) return envUrl.replace(/\/$/, '');
-  
-  if (window.location.hostname.includes('onrender.com')) {
-    return 'https://clarifai-backend-q4j0.onrender.com';
+
+  const hostname = window.location.hostname;
+  if (hostname.includes('onrender.com')) {
+    return `https://${hostname.replace('frontend', 'backend')}`;
   }
+
   return 'http://localhost:8000';
 };
 

@@ -7,29 +7,15 @@ import HomePage from './pages/HomePage';
 import AnalysisPage from './pages/AnalysisPage';
 
 const getApiUrl = () => {
-  // For Render deployment - Hardcoded for reliability
-  // TODO: If your backend URL is different, change it here!
-  return 'https://clarifai-backend-q4j0.onrender.com';
-  
-  // Uncomment below if you want to use the old logic
-  /*
-  // If we have an environment variable, use it
   const envUrl = import.meta.env.VITE_API_URL;
   if (envUrl) return envUrl.replace(/\/$/, '');
-  
-  // Auto-detect based on current hostname
+
   const hostname = window.location.hostname;
-  
   if (hostname.includes('onrender.com')) {
-    // If we are on clarifai-frontend.onrender.com,
-    // the backend is likely at clarifai-backend.onrender.com
-    const baseName = hostname.split('.')[0].replace('-frontend', '');
-    return `https://${baseName}-backend.onrender.com`;
+    return `https://${hostname.replace('frontend', 'backend')}`;
   }
-  
-  // Default to local development
+
   return 'http://localhost:8000';
-  */
 };
 
 const API_URL = getApiUrl();
