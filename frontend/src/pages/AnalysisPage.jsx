@@ -51,6 +51,57 @@ const AnalysisPage = ({ onBack, videoData }) => {
   const [currentTime, setCurrentTime] = useState(0);
   const [activeChunkIndex, setActiveChunkIndex] = useState(-1);
   const [isAutoScrollEnabled, setIsAutoScrollEnabled] = useState(true);
+  const [activeMobileTab, setActiveMobileTab] = useState('chat'); // 'chat', 'transcript', 'summary'
+
+  const renderSummaryContent = () => (
+    <div className="bg-white rounded-2xl border border-brand-border p-6 sm:p-8 shadow-sm relative overflow-hidden group">
+      {/* Decorative background element */}
+      <div className="absolute -right-4 -top-4 w-24 h-24 bg-orange-50 rounded-full blur-2xl opacity-50 group-hover:bg-orange-100 transition-colors" />
+      
+      <div className="flex items-center justify-between mb-8 relative">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 bg-orange-50 rounded-2xl flex items-center justify-center shadow-sm border border-orange-100/50">
+            <FileText className="text-[#FF8A00] w-6 h-6" />
+          </div>
+          <div>
+            <h2 className="text-xl font-black text-brand-dark tracking-tight">Smart Summary</h2>
+            <p className="text-[10px] text-brand-gray font-bold uppercase tracking-[0.15em]">AI-Generated Insights</p>
+          </div>
+        </div>
+        {summaryPoints && summaryPoints.length > 0 && (
+          <div className="px-3 py-1 bg-green-50 text-green-600 rounded-full flex items-center gap-1.5 border border-green-100">
+            <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+            <span className="text-[10px] font-black uppercase tracking-wider">Analysis Ready</span>
+          </div>
+        )}
+      </div>
+
+      {/* Content: Clean Minimalist Layout */}
+      <div className="flex flex-col gap-3 relative">
+        {summaryPoints && summaryPoints.length > 0 ? (
+          summaryPoints.map((point, i) => (
+            <div 
+              key={i} 
+              className="flex items-start gap-4 group/item py-0.5 animate-fadeIn"
+            >
+              <div className="mt-2 w-1.5 h-1.5 rounded-full bg-[#FF8A00] shadow-[0_0_8px_rgba(255,138,0,0.4)] group-hover/item:scale-150 transition-all duration-300 flex-shrink-0" />
+              <p className="text-[14px] leading-relaxed text-brand-dark/90 font-semibold tracking-tight border-b border-slate-50 w-full pb-2 group-hover/item:text-brand-dark group-hover/item:border-orange-100 transition-all">
+                {point}
+              </p>
+            </div>
+          ))
+        ) : (
+          <div className="w-full py-16 flex flex-col items-center justify-center gap-4 bg-slate-50/50 rounded-3xl border border-dashed border-slate-200">
+            <div className="w-12 h-12 rounded-full border-4 border-slate-100 border-t-brand-orange animate-spin" />
+            <div className="text-center">
+              <p className="text-sm font-bold text-brand-dark">Extracting Knowledge...</p>
+              <p className="text-[10px] text-brand-gray font-medium">Our AI is distilling the lecture into key points</p>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 
   const videoRef = useRef(null);
   const transcriptContainerRef = useRef(null);
@@ -352,7 +403,7 @@ const AnalysisPage = ({ onBack, videoData }) => {
                   }`}>
                     {status === 'completed' ? <CheckCircle2 className="w-4.5 h-4.5" /> : <StepIcon className="w-4 h-4" />}
                   </div>
-                  <div className="text-center absolute -bottom-6 whitespace-nowrap">
+                  <div className="text-center absolute -bottom-6 whitespace-nowrap hidden sm:block">
                     <p className={`text-[8px] font-black uppercase tracking-tight transition-colors duration-500 ${
                       status === 'pending' ? 'text-slate-300' : 'text-brand-orange'
                     }`}>
@@ -455,125 +506,25 @@ const AnalysisPage = ({ onBack, videoData }) => {
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
-            <button className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-brand-gray hover:bg-slate-50 rounded-lg transition-colors">
+          <div className="flex items-center gap-2 sm:gap-4">
+            <button className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-2 text-sm font-semibold text-brand-gray hover:bg-slate-50 rounded-lg transition-colors">
               <Share2 className="w-4 h-4" />
-              Share
+              <span className="hidden sm:inline">Share</span>
             </button>
-            <button className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-brand-gray hover:bg-slate-50 rounded-lg transition-colors">
+            <button className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-2 text-sm font-semibold text-brand-gray hover:bg-slate-50 rounded-lg transition-colors">
               <Download className="w-4 h-4" />
-              Export
+              <span className="hidden sm:inline">Export</span>
             </button>
           </div>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="pt-20 pb-10 px-6 max-w-[1800px] mx-auto">
-        <div className="flex flex-col lg:flex-row gap-6 items-start">
+      <main className="pt-20 pb-10 px-4 sm:px-6 max-w-[1800px] mx-auto">
+        <div className="flex flex-col lg:flex-row gap-6 items-start w-full">
           
-          {/* Left Column: Timestamps Only */}
-          <div className="w-full lg:w-[400px] space-y-6 h-[calc(100vh-120px)] sticky top-20 flex flex-col">
-            <div className="bg-white rounded-2xl border border-brand-border p-6 shadow-sm flex flex-col h-full overflow-hidden">
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-slate-50 rounded-lg flex items-center justify-center text-brand-gray">
-                    <Clock className="w-4 h-4" />
-                  </div>
-                  <h2 className="text-base font-bold">Transcript</h2>
-                </div>
-                <button 
-                  onClick={() => setIsAutoScrollEnabled(!isAutoScrollEnabled)}
-                  className={`text-[10px] px-2 py-1 rounded-md font-bold transition-colors ${isAutoScrollEnabled ? 'bg-brand-orange text-white' : 'bg-slate-100 text-brand-gray'}`}
-                >
-                  {isAutoScrollEnabled ? 'Auto-scroll On' : 'Auto-scroll Off'}
-                </button>
-              </div>
-
-              <div 
-                ref={transcriptContainerRef}
-                onScroll={handleScroll}
-                className="space-y-3 overflow-y-auto pr-2 scroll-smooth flex-1"
-              >
-                {transcriptChunks.length > 0 ? (
-                  transcriptChunks.map((item, i) => (
-                    <div 
-                      key={i} 
-                      ref={chunkRefs.current[i]}
-                      onClick={() => handleChunkClick(item.start_time)}
-                      className={`flex gap-3 p-2 rounded-xl transition-all duration-300 cursor-pointer group ${
-                        activeChunkIndex === i 
-                          ? 'bg-slate-100 shadow-sm ring-1 ring-slate-200' 
-                          : 'hover:bg-slate-50'
-                      }`}
-                    >
-                      {/* YouTube-style Thumbnail */}
-                      <div className="relative w-32 h-[72px] flex-shrink-0 rounded-lg overflow-hidden bg-slate-900 shadow-inner group-hover:shadow-lg transition-shadow">
-                        {videoUrl ? (
-                          <video 
-                            src={`${videoUrl}#t=${item.start_time}`} 
-                            className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
-                            muted
-                            preload="metadata"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center">
-                            <Play className="w-4 h-4 text-slate-600 fill-current" />
-                          </div>
-                        )}
-                        
-                        {/* Timestamp Overlay (Matches YouTube Style) */}
-                        <div className="absolute bottom-1 right-1 bg-black/80 text-white text-[10px] px-1.5 py-0.5 rounded font-bold tracking-tight">
-                          {formatTime(item.start_time)}
-                        </div>
-
-                        {/* Hover Play Icon Overlay */}
-                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/20">
-                          <div className="w-6 h-6 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                            <Play className="w-2.5 h-2.5 text-white fill-current" />
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Text Content Area */}
-                      <div className="flex-1 min-w-0 flex flex-col justify-center gap-1">
-                        <p className={`text-[12px] leading-snug line-clamp-2 transition-colors ${
-                          activeChunkIndex === i 
-                            ? 'text-brand-dark font-bold' 
-                            : 'text-brand-dark/70 font-medium group-hover:text-brand-dark'
-                        }`}>
-                          {item.text}
-                        </p>
-                        
-                        <div className="flex items-center gap-2">
-                          <span className="text-[10px] text-slate-400 font-bold tracking-tight">
-                            Lecture • {formatTime(item.start_time)}
-                          </span>
-                          {activeChunkIndex === i && (
-                            <div className="flex items-center gap-1">
-                              <div className="w-1 h-1 rounded-full bg-brand-orange animate-pulse" />
-                              <span className="text-[9px] text-brand-orange font-black uppercase tracking-widest">Now Playing</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="text-center py-20">
-                    <p className="text-xs text-brand-gray font-medium">
-                      {processingStatus === 'transcript_completed' 
-                        ? 'No transcript found' 
-                        : 'Transcript will appear here as soon as processing completes...'}
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Middle Column: Video Player (Top) & Smart Summary (Bottom) */}
-          <div className="flex-1 flex flex-col items-center gap-6">
+          {/* 1. Video Player Container (order-1 on mobile, part of middle column on desktop) */}
+          <div className="w-full lg:flex-1 flex flex-col items-center gap-6 order-1 lg:order-2">
             {/* Video Section */}
             <div className="w-full max-w-[800px] space-y-4">
               <div className="flex items-center gap-2 text-brand-gray text-xs font-medium px-1">
@@ -603,81 +554,173 @@ const AnalysisPage = ({ onBack, videoData }) => {
                     </div>
                   )}
                 </div>
-                <div className="p-5 flex items-center justify-between border-b border-brand-border">
+                <div className="p-4 sm:p-5 flex items-center justify-between border-b border-brand-border">
                   <div>
-                    <h1 className="text-lg font-bold mb-0.5">
+                    <h1 className="text-base sm:text-lg font-bold mb-0.5 line-clamp-1">
                       {videoData?.file ? videoData.file.name.split('.')[0] : 'Object-Oriented Programming Lecture'}
                     </h1>
                     <p className="text-[10px] text-brand-gray font-medium">
                       {videoData?.file ? `Size: ${(videoData.file.size / (1024 * 1024)).toFixed(2)} MB` : 'Duration: 35:24'}
                     </p>
                   </div>
-                  <button className="bg-brand-blue text-white px-4 py-2 rounded-lg text-[11px] font-bold flex items-center gap-2 hover:bg-slate-800 transition-all shadow-lg shadow-slate-900/10">
-                    <Sparkles className="w-3.5 h-3.5" />
-                    Generate Quiz
+                  <button className="bg-brand-blue text-white px-3 sm:px-4 py-2 rounded-lg text-[10px] sm:text-[11px] font-bold flex items-center gap-1.5 sm:gap-2 hover:bg-slate-800 transition-all shadow-lg shadow-slate-900/10">
+                    <Sparkles className="w-3 h-3" />
+                    Quiz
                   </button>
                 </div>
               </div>
             </div>
 
-            {/* Smart Summary Section */}
-            <div className="w-full max-w-[800px]">
-              <div className="bg-white rounded-2xl border border-brand-border p-8 shadow-sm relative overflow-hidden group">
-                {/* Decorative background element */}
-                <div className="absolute -right-4 -top-4 w-24 h-24 bg-orange-50 rounded-full blur-2xl opacity-50 group-hover:bg-orange-100 transition-colors" />
-                
-                <div className="flex items-center justify-between mb-8 relative">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-orange-50 rounded-2xl flex items-center justify-center shadow-sm border border-orange-100/50">
-                      <FileText className="text-brand-orange w-6 h-6" />
-                    </div>
-                    <div>
-                      <h2 className="text-xl font-black text-brand-dark tracking-tight">Smart Summary</h2>
-                      <p className="text-[10px] text-brand-gray font-bold uppercase tracking-[0.15em]">AI-Generated Insights</p>
-                    </div>
-                  </div>
-                  {summaryPoints && summaryPoints.length > 0 && (
-                    <div className="px-3 py-1 bg-green-50 text-green-600 rounded-full flex items-center gap-1.5 border border-green-100">
-                      <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                      <span className="text-[10px] font-black uppercase tracking-wider">Analysis Ready</span>
-                    </div>
-                  )}
-                </div>
+            {/* Desktop Smart Summary (only visible on desktop) */}
+            <div className="w-full max-w-[800px] hidden lg:block">
+              {renderSummaryContent()}
+            </div>
+          </div>
 
-                {/* Content: Clean Minimalist Layout */}
-                <div className="flex flex-col gap-3 relative">
-                  {summaryPoints && summaryPoints.length > 0 ? (
-                    summaryPoints.map((point, i) => (
-                      <div 
-                        key={i} 
-                        className="flex items-start gap-4 group/item py-0.5"
-                      >
-                        <div className="mt-2 w-1.5 h-1.5 rounded-full bg-brand-orange shadow-[0_0_8px_rgba(255,138,0,0.4)] group-hover/item:scale-150 transition-all duration-300 flex-shrink-0" />
-                        <p className="text-[14px] leading-relaxed text-brand-dark/90 font-semibold tracking-tight border-b border-slate-50 w-full pb-2 group-hover/item:text-brand-dark group-hover/item:border-orange-100 transition-all">
-                          {point}
-                        </p>
+          {/* 2. Mobile Tabs Navigation (order-2 on mobile, hidden on desktop) */}
+          <div className="w-full flex border border-brand-border lg:hidden mb-2 bg-white rounded-xl p-1 shadow-sm order-2">
+            <button 
+              type="button"
+              onClick={() => setActiveMobileTab('chat')}
+              className={`flex-1 py-2.5 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+                activeMobileTab === 'chat' ? 'bg-[#FF8A00] text-white shadow-sm' : 'text-brand-gray hover:text-brand-dark bg-transparent'
+              }`}
+            >
+              <MessageSquare className="w-3.5 h-3.5" />
+              Chat
+            </button>
+            <button 
+              type="button"
+              onClick={() => setActiveMobileTab('transcript')}
+              className={`flex-1 py-2.5 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+                activeMobileTab === 'transcript' ? 'bg-[#FF8A00] text-white shadow-sm' : 'text-brand-gray hover:text-brand-dark bg-transparent'
+              }`}
+            >
+              <Clock className="w-3.5 h-3.5" />
+              Transcript
+            </button>
+            <button 
+              type="button"
+              onClick={() => setActiveMobileTab('summary')}
+              className={`flex-1 py-2.5 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+                activeMobileTab === 'summary' ? 'bg-[#FF8A00] text-white shadow-sm' : 'text-brand-gray hover:text-brand-dark bg-transparent'
+              }`}
+            >
+              <FileText className="w-3.5 h-3.5" />
+              Summary
+            </button>
+          </div>
+
+          {/* 3. Left Column: Transcript (order-3 on mobile, shown on mobile if activeMobileTab is 'transcript') */}
+          <div className={`w-full lg:w-[400px] space-y-6 lg:h-[calc(100vh-120px)] lg:sticky lg:top-20 flex-col order-3 lg:order-1 ${
+            activeMobileTab === 'transcript' ? 'flex h-[450px]' : 'hidden lg:flex'
+          }`}>
+            <div className="bg-white rounded-2xl border border-brand-border p-4 sm:p-6 shadow-sm flex flex-col h-full overflow-hidden">
+              <div className="flex items-center justify-between mb-4 sm:mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-slate-50 rounded-lg flex items-center justify-center text-brand-gray">
+                    <Clock className="w-4 h-4" />
+                  </div>
+                  <h2 className="text-base font-bold">Transcript</h2>
+                </div>
+                <button 
+                  onClick={() => setIsAutoScrollEnabled(!isAutoScrollEnabled)}
+                  className={`text-[9px] sm:text-[10px] px-2 py-1 rounded-md font-bold transition-colors ${
+                    isAutoScrollEnabled ? 'bg-[#FF8A00] text-white' : 'bg-slate-100 text-brand-gray'
+                  }`}
+                >
+                  {isAutoScrollEnabled ? 'Auto-scroll On' : 'Auto-scroll Off'}
+                </button>
+              </div>
+
+              <div 
+                ref={transcriptContainerRef}
+                onScroll={handleScroll}
+                className="space-y-3 overflow-y-auto pr-2 scroll-smooth flex-1"
+              >
+                {transcriptChunks.length > 0 ? (
+                  transcriptChunks.map((item, i) => (
+                    <div 
+                      key={i} 
+                      ref={chunkRefs.current[i]}
+                      onClick={() => handleChunkClick(item.start_time)}
+                      className={`flex gap-3 p-2 rounded-xl transition-all duration-300 cursor-pointer group ${
+                        activeChunkIndex === i 
+                          ? 'bg-slate-100 shadow-sm ring-1 ring-slate-200' 
+                          : 'hover:bg-slate-50'
+                      }`}
+                    >
+                      {/* YouTube-style Thumbnail */}
+                      <div className="relative w-24 h-[54px] sm:w-32 sm:h-[72px] flex-shrink-0 rounded-lg overflow-hidden bg-slate-900 shadow-inner group-hover:shadow-lg transition-shadow">
+                        {videoUrl ? (
+                          <video 
+                            src={`${videoUrl}#t=${item.start_time}`} 
+                            className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
+                            muted
+                            preload="metadata"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <Play className="w-4 h-4 text-slate-600 fill-current" />
+                          </div>
+                        )}
+                        
+                        <div className="absolute bottom-1 right-1 bg-black/80 text-white text-[9px] px-1.5 py-0.5 rounded font-bold tracking-tight">
+                          {formatTime(item.start_time)}
+                        </div>
+
+                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/20">
+                          <div className="w-6 h-6 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                            <Play className="w-2.5 h-2.5 text-white fill-current" />
+                          </div>
+                        </div>
                       </div>
-                    ))
-                  ) : (
-                    <div className="col-span-2 py-16 flex flex-col items-center gap-4 bg-slate-50/50 rounded-3xl border border-dashed border-slate-200">
-                      <div className="w-12 h-12 rounded-full border-4 border-slate-100 border-t-brand-orange animate-spin" />
-                      <div className="text-center">
-                        <p className="text-sm font-bold text-brand-dark">Extracting Knowledge...</p>
-                        <p className="text-[10px] text-brand-gray font-medium">Our AI is distilling the lecture into key points</p>
+
+                      {/* Text Content Area */}
+                      <div className="flex-1 min-w-0 flex flex-col justify-center gap-1">
+                        <p className={`text-[11px] sm:text-[12px] leading-snug line-clamp-2 transition-colors ${
+                          activeChunkIndex === i 
+                            ? 'text-brand-dark font-bold' 
+                            : 'text-brand-dark/70 font-medium group-hover:text-brand-dark'
+                        }`}>
+                          {item.text}
+                        </p>
+                        
+                        <div className="flex items-center gap-2">
+                          <span className="text-[9px] text-slate-400 font-bold tracking-tight">
+                            Lecture • {formatTime(item.start_time)}
+                          </span>
+                          {activeChunkIndex === i && (
+                            <div className="flex items-center gap-1">
+                              <div className="w-1 h-1 rounded-full bg-[#FF8A00] animate-pulse" />
+                              <span className="text-[8px] text-[#FF8A00] font-black uppercase tracking-widest">Now Playing</span>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  )}
-                </div>
+                  ))
+                ) : (
+                  <div className="text-center py-20">
+                    <p className="text-xs text-brand-gray font-medium">
+                      {processingStatus === 'transcript_completed' 
+                        ? 'No transcript found' 
+                        : 'Transcript will appear here as soon as processing completes...'}
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
 
-          {/* Right Column: AI Assistant */}
-          <div className="w-full lg:w-[380px] flex flex-col h-[calc(100vh-160px)] sticky top-24">
+          {/* 4. Right Column: AI Assistant (order-4 on mobile, shown on mobile if activeMobileTab is 'chat') */}
+          <div className={`w-full lg:w-[380px] flex-col lg:h-[calc(100vh-160px)] lg:sticky lg:top-24 order-4 lg:order-3 ${
+            activeMobileTab === 'chat' ? 'flex h-[450px]' : 'hidden lg:flex'
+          }`}>
             <div className="bg-white rounded-2xl border border-brand-border shadow-sm flex flex-col h-full overflow-hidden">
               {/* AI Header */}
-              <div className="p-5 border-b border-brand-border flex items-center gap-4 bg-white sticky top-0 z-10">
-                <div className="w-10 h-10 bg-brand-orange rounded-xl flex items-center justify-center shadow-md shadow-orange-900/10">
+              <div className="p-4 sm:p-5 border-b border-brand-border flex items-center gap-4 bg-white sticky top-0 z-10">
+                <div className="w-10 h-10 bg-[#FF8A00] rounded-xl flex items-center justify-center shadow-md shadow-orange-900/10">
                   <Layers className="text-white w-6 h-6" />
                 </div>
                 <div>
@@ -687,18 +730,18 @@ const AnalysisPage = ({ onBack, videoData }) => {
               </div>
 
               {/* Chat Messages */}
-              <div className="flex-1 overflow-y-auto p-5 space-y-6 scrollbar-hide bg-slate-50/30">
+              <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-6 scrollbar-hide bg-slate-50/30">
                 {chatMessages.map((msg, idx) => (
                   <div key={idx} className={`flex gap-3 items-start ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
                     <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 mt-1 shadow-sm ${
-                      msg.role === 'assistant' ? 'bg-brand-orange' : 'bg-white border border-brand-border'
+                      msg.role === 'assistant' ? 'bg-[#FF8A00]' : 'bg-white border border-brand-border'
                     }`}>
                       {msg.role === 'assistant' ? <Layers className="text-white w-4 h-4" /> : <MessageSquare className="text-brand-gray w-4 h-4" />}
                     </div>
-                    <div className={`p-4 rounded-2xl shadow-sm max-w-[85%] space-y-3 ${
+                    <div className={`p-3 sm:p-4 rounded-2xl shadow-sm max-w-[85%] space-y-3 ${
                       msg.role === 'assistant' 
                         ? 'bg-white rounded-tl-none border border-orange-100/50 text-brand-dark' 
-                        : 'bg-brand-orange text-white rounded-tr-none shadow-orange-200'
+                        : 'bg-[#FF8A00] text-white rounded-tr-none shadow-orange-200'
                     }`}>
                       <p className={`text-xs leading-relaxed font-medium whitespace-pre-wrap ${msg.role === 'user' ? 'text-white' : 'text-brand-dark'}`}>
                         {msg.content}
@@ -711,9 +754,9 @@ const AnalysisPage = ({ onBack, videoData }) => {
                             <button 
                               key={tsIdx}
                               onClick={() => handleChunkClick(convertToSeconds(ts))}
-                              className="bg-slate-50 border border-brand-border px-3 py-1.5 rounded-lg text-[10px] font-bold flex items-center gap-1.5 hover:border-brand-orange hover:text-brand-orange transition-all group"
+                              className="bg-slate-50 border border-brand-border px-2.5 py-1.5 rounded-lg text-[9px] sm:text-[10px] font-bold flex items-center gap-1 hover:border-brand-orange hover:text-brand-orange transition-all group bg-white"
                             >
-                              <Play className="w-2.5 h-2.5 fill-current" />
+                              <Play className="w-2 h-2 fill-current" />
                               Jump to {ts.replace(/[\[\]]/g, '')}
                             </button>
                           ))}
@@ -749,21 +792,27 @@ const AnalysisPage = ({ onBack, videoData }) => {
                     onChange={(e) => setMessage(e.target.value)}
                     placeholder="Ask a question..." 
                     disabled={isTyping}
-                    className="w-full bg-slate-50 border border-brand-border rounded-xl py-4 pl-4 pr-12 text-xs outline-none focus:border-brand-orange focus:bg-white focus:ring-4 focus:ring-orange-500/5 transition-all disabled:opacity-50 font-medium"
+                    className="w-full bg-slate-50 border border-brand-border rounded-xl py-3.5 pl-4 pr-12 text-xs outline-none focus:border-brand-orange focus:bg-white focus:ring-4 focus:ring-orange-500/5 transition-all disabled:opacity-50 font-medium"
                   />
                   <button 
                     type="submit"
                     disabled={isTyping}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 bg-brand-blue text-white rounded-lg flex items-center justify-center hover:bg-brand-dark transition-all active:scale-90 disabled:opacity-50 shadow-lg shadow-blue-500/10"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 bg-brand-blue text-white rounded-lg flex items-center justify-center hover:bg-brand-dark transition-all active:scale-95 disabled:opacity-50 shadow-lg"
                   >
-                    <Send className="w-4 h-4" />
+                    <Send className="w-3.5 h-3.5" />
                   </button>
                 </div>
               </form>
             </div>
-           </div>
-         </div>
-       </main>
+          </div>
+
+          {/* 5. Mobile Smart Summary (order-5 on mobile, shown on mobile if activeMobileTab is 'summary') */}
+          <div className={`w-full max-w-[800px] order-5 lg:hidden ${activeMobileTab === 'summary' ? 'block' : 'hidden'}`}>
+            {renderSummaryContent()}
+          </div>
+
+        </div>
+      </main>
       </div>
     </div>
   );
